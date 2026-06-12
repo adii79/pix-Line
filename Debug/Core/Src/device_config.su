@@ -1,0 +1,13 @@
+../Core/Src/device_config.c:41:9:cfg_channels_for_format	16	static
+../Core/Src/device_config.c:52:9:cfg_wire_order	16	static
+../Core/Src/device_config.c:72:10:cfg_channels_per_led	8	static
+../Core/Src/device_config.c:73:10:cfg_bits_per_led	8	static
+../Core/Src/device_config.c:74:10:cfg_leds_per_pin	4	static
+../Core/Src/device_config.c:76:10:cfg_dma_len_per_pin	24	static
+../Core/Src/device_config.c:86:6:cfg_apply_ic	24	static
+../Core/Src/device_config.c:98:6:cfg_load_defaults	32	static
+../Core/Src/device_config.c:125:6:cfg_validate	32	static
+../Core/Src/device_config.c:170:17:cfg_crc32	40	static
+../Core/Src/device_config.c:186:6:cfg_init	144	static
+../Core/Src/device_config.c:204:6:cfg_save	192	static
+../Core/Src/device_config.c:243:6:cfg_factory_reset	32	static

@@ -1,0 +1,15 @@
+../Drivers/CMSIS/Include/core_cm4.h:1938:34:__NVIC_SystemReset	1
+../Core/Src/main.c:124:13:engine_refresh	2
+../Core/Src/main.c:137:13:build_pin	4
+../Core/Src/main.c:160:13:poll_factory_button	4
+../Core/Src/main.c:183:5:main	10
+../Core/Src/main.c:289:6:SystemClock_Config	3
+../Core/Src/main.c:335:13:MX_TIM3_Init	7
+../Core/Src/main.c:396:13:MX_TIM4_Init	7
+../Core/Src/main.c:457:13:MX_TIM5_Init	7
+../Core/Src/main.c:520:13:MX_USART3_UART_Init	2
+../Core/Src/main.c:553:13:MX_USB_OTG_FS_PCD_Init	2
+../Core/Src/main.c:586:13:MX_DMA_Init	1
+../Core/Src/main.c:622:13:MX_GPIO_Init	1
+../Core/Src/main.c:677:6:HAL_TIM_PWM_PulseFinishedCallback	8
+../Core/Src/main.c:698:6:Error_Handler	1

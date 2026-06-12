@@ -1,0 +1,2 @@
+../Core/Src/neo_pixel.c:9:10:neo_encode	9
+../Core/Src/neo_pixel.c:33:6:neo_fill_reset	2

@@ -1,0 +1,78 @@
+<!-- PREVIEW ONLY — this mirrors the markup produced by build_index_body() in
+     Core/Src/web_server.c with factory-default values. The real page is built
+     on the device and served at http://192.168.1.245/. Open this file in a
+     browser to see the layout. (Save/Reset buttons do nothing useful here.) -->
+<!DOCTYPE html><html><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>ArtNet Node Config</title><style>
+  body{background:#14141e;color:#eee;font-family:monospace;font-size:14px;padding:16px}
+  h1{color:#0df;font-size:1.3em;margin:0 0 4px}.s{color:#888;font-size:.8em;margin-bottom:16px}
+  .c{background:#1c2030;border:1px solid #2a3550;border-radius:6px;padding:14px;margin-bottom:14px}
+  h2{color:#0df;font-size:1em;border-bottom:1px solid #2a3550;padding-bottom:6px;margin:0 0 10px}
+  .r{display:flex;align-items:center;margin-bottom:8px;gap:8px}.r label{width:140px;color:#aaa}
+  input,select{background:#0f1830;border:1px solid #2a4;color:#eee;padding:5px;border-radius:4px;font-family:monospace}
+  input[type=number]{width:56px;text-align:center}input[type=text]{width:240px}
+  .g{display:flex;gap:4px}.b{padding:8px 20px;border:0;border-radius:4px;cursor:pointer;font-family:monospace;margin-right:8px}
+  .bs{background:#0b8;color:#000}.br{background:#c33;color:#fff}.n{color:#777;font-size:.8em;margin-top:10px}
+</style></head><body>
+<h1>&#9889; ArtNet Node</h1><div class=s>STM32 Nucleo-F429ZI &mdash; 5 pins &times; 4 universes</div>
+
+<div class=c><h2>Live Status</h2>
+  IP 192.168.1.245 &nbsp;|&nbsp; Mask 255.255.255.0 &nbsp;|&nbsp; GW 192.168.1.1<br>
+  Name: F429ZI ArtNet<br>ArtNet RX: total 0, DMX 0</div>
+
+<form method=get action=/save>
+
+<div class=c><h2>Network (applied on reboot)</h2>
+  <div class=r><label>IP Address</label><div class=g>
+    <input type=number name=ip0 min=0 max=255 value=192>
+    <input type=number name=ip1 min=0 max=255 value=168>
+    <input type=number name=ip2 min=0 max=255 value=1>
+    <input type=number name=ip3 min=0 max=255 value=245></div></div>
+  <div class=r><label>Subnet Mask</label><div class=g>
+    <input type=number name=nm0 min=0 max=255 value=255>
+    <input type=number name=nm1 min=0 max=255 value=255>
+    <input type=number name=nm2 min=0 max=255 value=255>
+    <input type=number name=nm3 min=0 max=255 value=0></div></div>
+  <div class=r><label>Gateway</label><div class=g>
+    <input type=number name=gw0 min=0 max=255 value=192>
+    <input type=number name=gw1 min=0 max=255 value=168>
+    <input type=number name=gw2 min=0 max=255 value=1>
+    <input type=number name=gw3 min=0 max=255 value=1></div></div></div>
+
+<div class=c><h2>Art-Net Identity</h2>
+  <div class=r><label>Short Name</label><input type=text name=sn maxlength=17 value="F429ZI ArtNet"></div>
+  <div class=r><label>Long Name</label><input type=text name=ln maxlength=63 value="STM32 Nucleo-F429ZI ArtNet Node"></div></div>
+
+<div class=c><h2>LED Engine</h2>
+  <div class=r><label>LED IC</label><select name=ic>
+    <option value=0 selected>WS2811</option>
+    <option value=1>WS2812B</option>
+    <option value=2>SK6812-RGBW</option></select></div>
+  <div class=r><label>Color Format</label><select name=cf>
+    <option value=0 selected>RGB</option>
+    <option value=1>RGBW</option>
+    <option value=2>WW/CW (2ch)</option>
+    <option value=3>W (1ch)</option></select></div>
+  <div class=r><label>LEDs / Universe</label><input type=number name=lu min=1 max=150 value=150></div>
+  <div class=r><label>Universes / Pin</label><input type=number name=upp min=1 max=4 value=4></div>
+  <div class=r><label>T-on (1)</label><input type=number name=ton min=1 max=24 value=15>
+    <label style=width:auto>T-off (0)</label><input type=number name=toff min=1 max=24 value=7></div>
+  <div class=n>Compare vs ARR=24 @ 21MHz. WS2811 defaults: T-on 15, T-off 7.</div></div>
+
+<div class=c><h2>Pin &rarr; Universe Map</h2>
+  <div class=n>Each row sets the Art-Net universes (0-19) feeding that pin, in output order. e.g. Pin&nbsp;1 = 2,6,8,1.</div>
+  <div class=r><label>Pin 1</label><div class=g>
+    <input type=number name=m0_0 min=0 max=19 value=0><input type=number name=m0_1 min=0 max=19 value=1><input type=number name=m0_2 min=0 max=19 value=2><input type=number name=m0_3 min=0 max=19 value=3></div></div>
+  <div class=r><label>Pin 2</label><div class=g>
+    <input type=number name=m1_0 min=0 max=19 value=4><input type=number name=m1_1 min=0 max=19 value=5><input type=number name=m1_2 min=0 max=19 value=6><input type=number name=m1_3 min=0 max=19 value=7></div></div>
+  <div class=r><label>Pin 3</label><div class=g>
+    <input type=number name=m2_0 min=0 max=19 value=8><input type=number name=m2_1 min=0 max=19 value=9><input type=number name=m2_2 min=0 max=19 value=10><input type=number name=m2_3 min=0 max=19 value=11></div></div>
+  <div class=r><label>Pin 4</label><div class=g>
+    <input type=number name=m3_0 min=0 max=19 value=12><input type=number name=m3_1 min=0 max=19 value=13><input type=number name=m3_2 min=0 max=19 value=14><input type=number name=m3_3 min=0 max=19 value=15></div></div>
+  <div class=r><label>Pin 5</label><div class=g>
+    <input type=number name=m4_0 min=0 max=19 value=16><input type=number name=m4_1 min=0 max=19 value=17><input type=number name=m4_2 min=0 max=19 value=18><input type=number name=m4_3 min=0 max=19 value=19></div></div>
+</div>
+
+<button type=submit class='b bs'>&#128190; Save &amp; Reboot</button>
+<button type=submit formaction=/reset class='b br' onclick="return confirm('Erase settings and reboot to defaults?')">&#8634; Factory Reset</button></form>
+<div class=n>Settings persist in flash and apply after reboot. Factory reset (or the B1 button held at boot) restores 192.168.1.245.</div>
+</body></html>
