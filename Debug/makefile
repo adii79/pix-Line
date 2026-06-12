@@ -71,8 +71,8 @@ all: main-build
 main-build: nucleo_artnet.elf secondary-outputs
 
 # Tool invocations
-nucleo_artnet.elf nucleo_artnet.map: $(OBJS) $(USER_OBJS) /Users/adityashigam/st/nucleo_artnet/STM32F429ZITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "nucleo_artnet.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/Users/adityashigam/st/nucleo_artnet/STM32F429ZITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="nucleo_artnet.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+nucleo_artnet.elf nucleo_artnet.map: $(OBJS) $(USER_OBJS) /Users/adityashigam/st/nucleo_artnet\ copy/STM32F429ZITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "nucleo_artnet.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/Users/adityashigam/st/nucleo_artnet copy/STM32F429ZITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="nucleo_artnet.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
