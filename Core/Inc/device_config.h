@@ -39,8 +39,17 @@
  * The config validator guarantees the active stream never exceeds this budget.
  */
 #define CFG_PULSE_HALFWORDS_PER_PIN   14400U
+#define CFG_LEAD_HALFWORDS            16U      /* leading low time (see below)  */
 #define CFG_RESET_HALFWORDS           24U      /* trailing low time (latch)     */
-#define CFG_DMA_HALFWORDS_PER_PIN     (CFG_PULSE_HALFWORDS_PER_PIN + CFG_RESET_HALFWORDS)
+#define CFG_DMA_HALFWORDS_PER_PIN     (CFG_LEAD_HALFWORDS + CFG_PULSE_HALFWORDS_PER_PIN + CFG_RESET_HALFWORDS)
+
+/* CFG_LEAD_HALFWORDS: TIM3 drives four strips from ONE shared counter, started
+ * by four separate HAL_TIM_PWM_Start_DMA() calls. Channels 2..4 join a counter
+ * that is already running mid-period, and the counter is never reset between
+ * frames, so each channel's FIRST transmitted bit is a malformed partial pulse.
+ * These leading zero half-words absorb that glitch (line held low) so it never
+ * lands on pixel 0's first byte — which on GRB order is Green. Without this you
+ * get a flickering green first pixel even on an all-zero frame. */
 
 /* ===========================================================================
  * LED IC catalogue.  Only WS2811 is wired up "for real" today; the table makes

@@ -77,7 +77,7 @@ uint32_t cfg_dma_len_per_pin(void)
 {
     uint32_t pulses = (uint32_t)cfg_leds_per_pin() * cfg_bits_per_led();
     if (pulses > CFG_PULSE_HALFWORDS_PER_PIN) pulses = CFG_PULSE_HALFWORDS_PER_PIN;
-    return pulses + CFG_RESET_HALFWORDS;
+    return CFG_LEAD_HALFWORDS + pulses + CFG_RESET_HALFWORDS;
 }
 
 /* ===========================================================================

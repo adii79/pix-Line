@@ -137,6 +137,9 @@ static void engine_refresh(void)
 static void build_pin(uint8_t pin)
 {
     uint16_t *dst = led_buf[pin];
+    neo_fill_reset(dst, CFG_LEAD_HALFWORDS);    /* leading low: absorb the shared-
+                                                 * timer mid-period start glitch  */
+    dst += CFG_LEAD_HALFWORDS;
     for (uint8_t s = 0; s < g_upp; s++) {
         uint8_t uni = g_cfg.pin_universe[pin][s];
         const uint8_t *src = (uni < DMX_UNIVERSE_COUNT && dmx_universes[uni].valid)
