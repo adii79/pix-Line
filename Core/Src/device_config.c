@@ -25,16 +25,27 @@
 device_config_t g_cfg __attribute__((section(".ccmram")));
 
 /* ===========================================================================
- * IC catalogue. Add a row here to support a new single-wire IC.
- * t_on/t_off are TIM compare values against ARR = 24 (period = 25 ticks @
- * 21 MHz => 840 kHz bit clock):  '1' high ~= t/25 * 1.19us, '0' high likewise.
+ * IC catalogue. Add a row here to support a new single-wire IC — everything
+ * else (encoder, web UI, validation) is generic. t_on/t_off are TIM compare
+ * values against ARR = 24 (period = 25 ticks @ 21 MHz => 840 kHz bit clock):
+ * '1' high ~= t/25 * 1.19us, '0' high likewise. These are factory defaults
+ * only — format, sequence and timing all stay user-editable per-IC in the
+ * web UI (real reels vary by batch/vendor), so treat them as a starting
+ * point rather than a guarantee.
  * ===========================================================================*/
 const led_ic_desc_t g_led_ic_table[LED_IC_COUNT] = {
-    /* name            default_format  t_on t_off leds/uni (<= per-pin budget) */
-    { "WS2811",        COLOR_RGB,       15,   7,   170 },
-    { "WS2812B",       COLOR_RGB,       16,   8,   170 },
-    { "SK6812-RGBW",   COLOR_RGBW,      16,   8,   112 },
-    { "Custom",        COLOR_RGB,       15,   7,   170 },
+    /* name            default_format  default_order  t_on t_off leds/uni    */
+    { "WS2811",        COLOR_RGB,      ORDER_GRB,      15,   7,   170 },
+    { "WS2812",        COLOR_RGB,      ORDER_GRB,      16,   8,   170 },
+    { "WS2812B",       COLOR_RGB,      ORDER_GRB,      16,   8,   170 },
+    { "WS2813",        COLOR_RGB,      ORDER_GRB,      16,   8,   170 },
+    { "WS2815",        COLOR_RGB,      ORDER_GRB,      15,   7,   170 },
+    { "SK6812",        COLOR_RGB,      ORDER_GRB,      16,   8,   170 },
+    { "SK6812-RGBW",   COLOR_RGBW,     ORDER_GRB,      16,   8,   112 },
+    { "UCS1903",       COLOR_RGB,      ORDER_RGB,      16,   8,   170 },
+    { "TM1809",        COLOR_RGB,      ORDER_RGB,      16,   8,   170 },
+    { "APA106",        COLOR_RGB,      ORDER_RGB,      16,   8,   170 },
+    { "Custom",        COLOR_RGB,      ORDER_GRB,      15,   7,   170 },
 };
 
 /* ---- colour format -> channels & wire order ---------------------------- */
@@ -49,20 +60,35 @@ uint8_t cfg_channels_for_format(color_format_t fmt)
     }
 }
 
-uint8_t cfg_wire_order(color_format_t fmt, const uint8_t **perm_out)
+uint8_t cfg_wire_order(color_format_t fmt, color_order_t order, const uint8_t **perm_out)
 {
-    /* perm[out_index] = source (DMX) channel index.
-     * WS chips clock G,R,B[,W]; DMX/Madrix sends R,G,B[,W]. */
-    static const uint8_t rgb[3]  = {1, 0, 2};       /* G R B  from R G B        */
-    static const uint8_t rgbw[4] = {1, 0, 2, 3};    /* G R B W from R G B W     */
+    /* perm[out_index] = source (DMX R,G,B[,W]) channel index. W, when
+     * present, is always clocked last regardless of the R/G/B sequence. */
+    static const uint8_t o3_rgb[3] = {0, 1, 2};
+    static const uint8_t o3_rbg[3] = {0, 2, 1};
+    static const uint8_t o3_grb[3] = {1, 0, 2};
+    static const uint8_t o3_gbr[3] = {1, 2, 0};
+    static const uint8_t o3_brg[3] = {2, 0, 1};
+    static const uint8_t o3_bgr[3] = {2, 1, 0};
+    static const uint8_t o4_rgb[4] = {0, 1, 2, 3};
+    static const uint8_t o4_rbg[4] = {0, 2, 1, 3};
+    static const uint8_t o4_grb[4] = {1, 0, 2, 3};
+    static const uint8_t o4_gbr[4] = {1, 2, 0, 3};
+    static const uint8_t o4_brg[4] = {2, 0, 1, 3};
+    static const uint8_t o4_bgr[4] = {2, 1, 0, 3};
+    static const uint8_t *perm3[ORDER_COUNT] = { o3_rgb, o3_rbg, o3_grb, o3_gbr, o3_brg, o3_bgr };
+    static const uint8_t *perm4[ORDER_COUNT] = { o4_rgb, o4_rbg, o4_grb, o4_gbr, o4_brg, o4_bgr };
     static const uint8_t pass2[2] = {0, 1};
     static const uint8_t pass1[1] = {0};
+
+    if (order >= ORDER_COUNT) order = ORDER_GRB;
+
     switch (fmt) {
-        case COLOR_RGB:  *perm_out = rgb;   return 3;
-        case COLOR_RGBW: *perm_out = rgbw;  return 4;
-        case COLOR_WWCW: *perm_out = pass2; return 2;
-        case COLOR_W:    *perm_out = pass1; return 1;
-        default:         *perm_out = rgb;   return 3;
+        case COLOR_RGB:  *perm_out = perm3[order]; return 3;
+        case COLOR_RGBW: *perm_out = perm4[order]; return 4;
+        case COLOR_WWCW: *perm_out = pass2;        return 2;
+        case COLOR_W:    *perm_out = pass1;        return 1;
+        default:         *perm_out = perm3[order]; return 3;
     }
 }
 
@@ -89,6 +115,7 @@ void cfg_apply_ic(device_config_t *c, led_ic_t ic)
     const led_ic_desc_t *d = &g_led_ic_table[ic];
     c->led_ic           = (uint8_t)ic;
     c->color_format     = (uint8_t)d->default_format;
+    c->color_order      = (uint8_t)d->default_order;
     c->t_on             = d->t_on;
     c->t_off            = d->t_off;
     c->leds_per_universe = d->default_leds_per_uni;
@@ -128,24 +155,22 @@ bool cfg_validate(device_config_t *c)
 
     if (c->led_ic >= LED_IC_COUNT)         { c->led_ic = LED_IC_WS2811;  ok = false; }
     if (c->color_format >= COLOR_COUNT)    { c->color_format = COLOR_RGB; ok = false; }
+    if (c->color_order >= ORDER_COUNT)     { c->color_order = ORDER_GRB;  ok = false; }
     if (c->universes_per_pin < 1)          { c->universes_per_pin = 1;   ok = false; }
     if (c->universes_per_pin > CFG_MAX_UNI_PER_PIN) { c->universes_per_pin = CFG_MAX_UNI_PER_PIN; ok = false; }
 
     uint8_t chan = cfg_channels_for_format((color_format_t)c->color_format);
 
-    /* Timing is user-tunable only for the Custom IC; named ICs are pinned to
-     * their catalogue presets so the wire timing always matches the part.    */
-    if (c->led_ic != LED_IC_CUSTOM) {
-        const led_ic_desc_t *d = &g_led_ic_table[c->led_ic];
-        c->t_on  = d->t_on;
-        c->t_off = d->t_off;
-        c->active_channels = chan;            /* named ICs drive every channel */
-    } else {
-        if (c->t_on  < 1 || c->t_on  > 24)   { c->t_on = 15;  ok = false; }
-        if (c->t_off < 1 || c->t_off > 24)   { c->t_off = 7;  ok = false; }
-        if (c->active_channels < 1)          { c->active_channels = chan; ok = false; }
-        if (c->active_channels > chan)       { c->active_channels = chan; ok = false; }
-    }
+    /* Sequence and timing are user-tunable for every IC, not just Custom —
+     * the catalogue entries (g_led_ic_table) are only starting defaults that
+     * the web UI loads when you pick an IC; real reels vary by batch. We
+     * still clamp to sane ranges here so a bad/garbled request can't wedge
+     * the wire protocol. */
+    const led_ic_desc_t *d = &g_led_ic_table[c->led_ic];
+    if (c->t_on  < 1 || c->t_on  > 24)   { c->t_on  = d->t_on;  ok = false; }
+    if (c->t_off < 1 || c->t_off > 24)   { c->t_off = d->t_off; ok = false; }
+    if (c->active_channels < 1)          { c->active_channels = chan; ok = false; }
+    if (c->active_channels > chan)       { c->active_channels = chan; ok = false; }
 
     /* clamp leds/universe so the per-pin pulse stream fits the DMA budget */
     uint16_t cpl   = cfg_channels_for_format((color_format_t)c->color_format) * 8u;

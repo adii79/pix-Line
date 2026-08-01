@@ -123,7 +123,8 @@ static uint32_t       g_dma_len;       /* active half-words per pin (+ reset)   
 
 static void engine_refresh(void)
 {
-    g_channels     = cfg_wire_order((color_format_t)g_cfg.color_format, &g_perm);
+    g_channels     = cfg_wire_order((color_format_t)g_cfg.color_format,
+                                     (color_order_t)g_cfg.color_order, &g_perm);
     g_bits_per_led = (uint16_t)g_channels * 8u;
     g_leds_per_uni = g_cfg.leds_per_universe;
     g_upp          = g_cfg.universes_per_pin;

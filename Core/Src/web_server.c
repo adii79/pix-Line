@@ -223,24 +223,37 @@ static uint32_t build_index_body(char *buf, size_t cap)
        c->short_name, c->long_name);
 
     /* LED engine */
-    AP("<div class=c><h2>LED Engine</h2><div class=r><label>LED IC</label><select id=ic name=ic>");
+    AP("<div class=c><h2>LED Engine</h2>"
+       "<div class=n>Pick an IC to load its factory-default format/sequence/timing below, "
+       "then tweak any of them to match your actual reel &mdash; every field here is "
+       "always editable, for any IC.</div>"
+       "<div class=r><label>LED IC</label><select id=ic name=ic>");
     for (int i = 0; i < LED_IC_COUNT; i++)
         AP("<option value=%d%s>%s</option>", i,
            (c->led_ic == i) ? " selected" : "", g_led_ic_table[i].name);
     AP("</select></div>");
 
     static const char *fmt_names[COLOR_COUNT] = { "RGB", "RGBW", "WW/CW (2ch)", "W (1ch)" };
-    AP("<div class=r><label>Color Format</label><select name=cf>");
+    AP("<div class=r><label>Color Format</label><select id=cf name=cf>");
     for (int i = 0; i < COLOR_COUNT; i++)
         AP("<option value=%d%s>%s</option>", i,
            (c->color_format == i) ? " selected" : "", fmt_names[i]);
     AP("</select></div>");
 
+    static const char *order_names[ORDER_COUNT] = { "RGB", "RBG", "GRB", "GBR", "BRG", "BGR" };
+    AP("<div class=r><label>LED Sequence</label><select id=co name=co>");
+    for (int i = 0; i < ORDER_COUNT; i++)
+        AP("<option value=%d%s>%s</option>", i,
+           (c->color_order == i) ? " selected" : "", order_names[i]);
+    AP("</select></div>"
+       "<div class=n>Wire byte order for R/G/B (e.g. WS2812B/SK6812 = GRB, UCS1903/TM1809/APA106 = RGB). "
+       "On RGBW format the W channel is always clocked last, after this sequence.</div>");
+
     AP("<div class=r><label>LEDs / Universe</label><input type=number name=lu min=1 max=170 value=%u></div>"
        "<div class=r><label>Universes / Pin</label><input type=number name=upp min=1 max=%u value=%u></div>",
        c->leds_per_universe, CFG_MAX_UNI_PER_PIN, c->universes_per_pin);
 
-    /* Active channels (Custom IC only): drive 2 or 3 channels, 3rd held off. */
+    /* Active channels: drive 2 or 3 channels, remaining channel(s) held off. */
     AP("<div class=r><label>Active Channels</label><select id=ac name=ac>"
        "<option value=2%s>2 (3rd channel off)</option>"
        "<option value=3%s>3 (full)</option></select></div>",
@@ -249,14 +262,29 @@ static uint32_t build_index_body(char *buf, size_t cap)
 
     AP("<div class=r><label>T-on (1)</label><input type=number id=ton name=ton min=1 max=24 value=%u>"
        "<label style=width:auto>T-off (0)</label><input type=number id=toff name=toff min=1 max=24 value=%u></div>"
-       "<div class=n>Duty-cycle compare vs ARR=24 @ 21MHz (T-on/off and Active "
-       "Channels are editable only for the <b>Custom</b> IC). WS2811: T-on 15, T-off 7.</div></div>",
+       "<div class=n>Duty-cycle compare vs ARR=24 @ 21MHz. WS2811/WS2815 default: T-on 15, T-off 7. "
+       "WS2812B/WS2813/SK6812 family default: T-on 16, T-off 8.</div></div>",
        c->t_on, c->t_off);
 
-    /* enable Custom-only fields when the Custom IC is selected */
-    AP("<script>function ut(){var x=document.getElementById('ic').value==='%d';"
-       "['ton','toff','ac'].forEach(function(k){document.getElementById(k).disabled=!x;});}"
-       "document.getElementById('ic').onchange=ut;ut();</script>", LED_IC_CUSTOM);
+    /* IC dropdown loads that IC's catalogue defaults into the fields above —
+     * only on an explicit change, never on page load, so opening the page
+     * never clobbers already-saved custom settings. Everything stays
+     * editable afterwards; Save just persists whatever the fields hold. */
+    AP("<script>var ICP=[");
+    for (int i = 0; i < LED_IC_COUNT; i++)
+        AP("%s[%d,%d,%u,%u,%u]", i ? "," : "",
+           g_led_ic_table[i].default_format, g_led_ic_table[i].default_order,
+           g_led_ic_table[i].t_on, g_led_ic_table[i].t_off,
+           g_led_ic_table[i].default_leds_per_uni);
+    AP("];"
+       "document.getElementById('ic').addEventListener('change',function(){"
+       "var p=ICP[this.value];if(!p)return;"
+       "document.getElementById('cf').value=p[0];"
+       "document.getElementById('co').value=p[1];"
+       "document.getElementById('ton').value=p[2];"
+       "document.getElementById('toff').value=p[3];"
+       "document.getElementsByName('lu')[0].value=p[4];"
+       "});</script>");
 
     /* pin -> universe mapping */
     AP("<div class=c><h2>Pin &rarr; Universe Map</h2>"
@@ -331,6 +359,7 @@ static void apply_query_to_cfg(const char *q)
 
     c->led_ic           = q_int(q, "ic",  c->led_ic);
     c->color_format     = q_int(q, "cf",  c->color_format);
+    c->color_order      = q_int(q, "co",  c->color_order);
     c->leds_per_universe = q_int(q, "lu",  c->leds_per_universe);
     c->universes_per_pin = q_int(q, "upp", c->universes_per_pin);
     c->active_channels  = q_int(q, "ac",  c->active_channels);

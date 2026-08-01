@@ -43,20 +43,51 @@
   <div class=r><label>Long Name</label><input type=text name=ln maxlength=63 value="STM32 Nucleo-F429ZI ArtNet Node"></div></div>
 
 <div class=c><h2>LED Engine</h2>
-  <div class=r><label>LED IC</label><select name=ic>
+  <div class=n>Pick an IC to load its factory-default format/sequence/timing below, then tweak any of them to match your actual reel &mdash; every field here is always editable, for any IC.</div>
+  <div class=r><label>LED IC</label><select id=ic name=ic>
     <option value=0 selected>WS2811</option>
-    <option value=1>WS2812B</option>
-    <option value=2>SK6812-RGBW</option></select></div>
-  <div class=r><label>Color Format</label><select name=cf>
+    <option value=1>WS2812</option>
+    <option value=2>WS2812B</option>
+    <option value=3>WS2813</option>
+    <option value=4>WS2815</option>
+    <option value=5>SK6812</option>
+    <option value=6>SK6812-RGBW</option>
+    <option value=7>UCS1903</option>
+    <option value=8>TM1809</option>
+    <option value=9>APA106</option>
+    <option value=10>Custom</option></select></div>
+  <div class=r><label>Color Format</label><select id=cf name=cf>
     <option value=0 selected>RGB</option>
     <option value=1>RGBW</option>
     <option value=2>WW/CW (2ch)</option>
     <option value=3>W (1ch)</option></select></div>
-  <div class=r><label>LEDs / Universe</label><input type=number name=lu min=1 max=150 value=150></div>
+  <div class=r><label>LED Sequence</label><select id=co name=co>
+    <option value=0>RGB</option>
+    <option value=1>RBG</option>
+    <option value=2 selected>GRB</option>
+    <option value=3>GBR</option>
+    <option value=4>BRG</option>
+    <option value=5>BGR</option></select></div>
+  <div class=n>Wire byte order for R/G/B (e.g. WS2812B/SK6812 = GRB, UCS1903/TM1809/APA106 = RGB). On RGBW format the W channel is always clocked last, after this sequence.</div>
+  <div class=r><label>LEDs / Universe</label><input type=number name=lu min=1 max=170 value=150></div>
   <div class=r><label>Universes / Pin</label><input type=number name=upp min=1 max=4 value=4></div>
-  <div class=r><label>T-on (1)</label><input type=number name=ton min=1 max=24 value=15>
-    <label style=width:auto>T-off (0)</label><input type=number name=toff min=1 max=24 value=7></div>
-  <div class=n>Compare vs ARR=24 @ 21MHz. WS2811 defaults: T-on 15, T-off 7.</div></div>
+  <div class=r><label>Active Channels</label><select id=ac name=ac>
+    <option value=2>2 (3rd channel off)</option>
+    <option value=3 selected>3 (full)</option></select></div>
+  <div class=r><label>T-on (1)</label><input type=number id=ton name=ton min=1 max=24 value=15>
+    <label style=width:auto>T-off (0)</label><input type=number id=toff name=toff min=1 max=24 value=7></div>
+  <div class=n>Duty-cycle compare vs ARR=24 @ 21MHz. WS2811/WS2815 default: T-on 15, T-off 7. WS2812B/WS2813/SK6812 family default: T-on 16, T-off 8.</div></div>
+  <script>
+  var ICP=[[0,2,15,7,170],[0,2,16,8,170],[0,2,16,8,170],[0,2,16,8,170],[0,2,15,7,170],[0,2,16,8,170],[1,2,16,8,112],[0,0,16,8,170],[0,0,16,8,170],[0,0,16,8,170],[0,2,15,7,170]];
+  document.getElementById('ic').addEventListener('change',function(){
+    var p=ICP[this.value];if(!p)return;
+    document.getElementById('cf').value=p[0];
+    document.getElementById('co').value=p[1];
+    document.getElementById('ton').value=p[2];
+    document.getElementById('toff').value=p[3];
+    document.getElementsByName('lu')[0].value=p[4];
+  });
+  </script>
 
 <div class=c><h2>Pin &rarr; Universe Map</h2>
   <div class=n>Each row sets the Art-Net universes (0-19) feeding that pin, in output order. e.g. Pin&nbsp;1 = 2,6,8,1.</div>

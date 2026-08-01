@@ -52,48 +52,74 @@
  * get a flickering green first pixel even on an all-zero frame. */
 
 /* ===========================================================================
- * LED IC catalogue.  Only WS2811 is wired up "for real" today; the table makes
- * it a one-line job to add WS2812B / SK6812 etc. (see device_config.c).
+ * LED IC catalogue. Every entry drives the same generic NRZ engine
+ * (neo_pixel.c) — adding an IC is a one-line row in device_config.c, no code
+ * changes needed. Timing/format/order below are sensible factory defaults for
+ * that part; all four (IC, format, sequence, T-on/T-off) stay user-editable
+ * in the web UI after picking an IC, since real-world reels vary by batch.
  * ===========================================================================*/
 typedef enum {
-    LED_IC_WS2811 = 0,     /* 800 kHz, GRB, T0H~0.35us T1H~0.7us  (default)     */
-    LED_IC_WS2812B,        /* 800 kHz, GRB                                       */
-    LED_IC_SK6812_RGBW,    /* 800 kHz, GRBW                                      */
-    LED_IC_CUSTOM,         /* user-defined timing + 2/3 active channels         */
+    LED_IC_WS2811 = 0,     /* 12V/5V, GRB, T0H~0.5us  T1H~0.3us (slow, tolerant) */
+    LED_IC_WS2812,          /* 5V, GRB, original WS2812 (no reset/backup latch)  */
+    LED_IC_WS2812B,        /* 5V, GRB, most common addressable RGB strip         */
+    LED_IC_WS2813,         /* 5V, GRB, WS2812B-compatible + backup data line     */
+    LED_IC_WS2815,         /* 12V, GRB, WS2811-compatible, dual-signal wire      */
+    LED_IC_SK6812,         /* 5V, GRB, WS2812B-compatible RGB                   */
+    LED_IC_SK6812_RGBW,    /* 5V, GRBW, RGB + true white channel                */
+    LED_IC_UCS1903,        /* 5V, RGB order, similar NRZ timing to WS2811       */
+    LED_IC_TM1809,         /* 5V, RGB order, similar NRZ timing to WS2811       */
+    LED_IC_APA106,         /* 5V, RGB order, WS2812-family timing               */
+    LED_IC_CUSTOM,         /* fully user-defined timing/format/order/channels  */
     LED_IC_COUNT
 } led_ic_t;
 
-/* Colour / channel format — drives channels-per-LED and the wire permutation. */
+/* Colour / channel format — drives channels-per-LED. Wire byte *order* within
+ * the format is a separate, independently selectable field (color_order_t). */
 typedef enum {
-    COLOR_RGB  = 0,        /* 3 ch, wire order G R B                            */
-    COLOR_RGBW,            /* 4 ch, wire order G R B W                          */
+    COLOR_RGB  = 0,        /* 3 ch                                              */
+    COLOR_RGBW,            /* 4 ch (W always clocked last on the wire)          */
     COLOR_WWCW,            /* 2 ch, tunable white (pass-through)                */
     COLOR_W,               /* 1 ch, single white                               */
     COLOR_COUNT
 } color_format_t;
 
+/* Wire byte order for the R/G/B channels (W, when present, is always last —
+ * true of essentially every RGBW single-wire part). Pick to match your LEDs:
+ * WS2812B/SK6812/WS2813 family = GRB, UCS1903/TM1809/APA106 = RGB, etc. */
+typedef enum {
+    ORDER_RGB  = 0,
+    ORDER_RBG,
+    ORDER_GRB,             /* WS2812B / SK6812 / WS2813 family default          */
+    ORDER_GBR,
+    ORDER_BRG,
+    ORDER_BGR,
+    ORDER_COUNT
+} color_order_t;
+
 #define CFG_MAX_CHANNELS_PER_LED  4
 
 /* Static descriptor for one IC type (lives in flash/rodata). */
 typedef struct {
-    const char    *name;            /* shown in the web UI                      */
-    color_format_t default_format;
-    uint8_t        t_on;            /* PWM compare for a logic '1'  (of ARR=24) */
-    uint8_t        t_off;           /* PWM compare for a logic '0'              */
-    uint16_t       default_leds_per_uni;
+    const char     *name;            /* shown in the web UI                     */
+    color_format_t  default_format;
+    color_order_t   default_order;
+    uint8_t         t_on;            /* PWM compare for a logic '1' (of ARR=24) */
+    uint8_t         t_off;           /* PWM compare for a logic '0'             */
+    uint16_t        default_leds_per_uni;
 } led_ic_desc_t;
 
 extern const led_ic_desc_t g_led_ic_table[LED_IC_COUNT];
 
 /* Channels per LED for a given colour format. */
 uint8_t cfg_channels_for_format(color_format_t fmt);
-/* Output-channel -> DMX-channel permutation (wire order). Returns channel cnt.*/
-uint8_t cfg_wire_order(color_format_t fmt, const uint8_t **perm_out);
+/* Output-channel -> DMX-channel permutation for (format, sequence). Returns
+ * the number of channels clocked on the wire. */
+uint8_t cfg_wire_order(color_format_t fmt, color_order_t order, const uint8_t **perm_out);
 
 /* ===========================================================================
  * The persisted configuration blob.
  * ===========================================================================*/
-#define CFG_MAGIC      0x4E454232u   /* "NEB2" — bump on incompatible layout    */
+#define CFG_MAGIC      0x4E454233u   /* "NEB3" — bump on incompatible layout    */
 #define CFG_SHORT_LEN  18
 #define CFG_LONG_LEN   64
 
@@ -112,6 +138,7 @@ typedef struct {
     /* --- LED engine --- */
     uint8_t  led_ic;                      /* led_ic_t                            */
     uint8_t  color_format;                /* color_format_t                      */
+    uint8_t  color_order;                 /* color_order_t (wire R/G/B sequence) */
     uint8_t  t_on;                        /* PWM duty for '1'                    */
     uint8_t  t_off;                       /* PWM duty for '0'                    */
     uint16_t leds_per_universe;
